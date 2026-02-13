@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Признание · печать каждой фразы</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bad+Script&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      background: #0a0a0a;
+      height: 100vh;
+      width: 100vw;
+      font-family: 'Bad Script', cursive; 
+    }
+
+    .start-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+      background: transparent;
+      border: 2px solid #ff69b4;
+      border-radius: 60px;
+      padding: 18px 40px;
+      color: #ff69b4;
+      font-size: 2.5rem;
+      font-weight: 400;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 0 30px #ff69b4;
+      backdrop-filter: blur(4px);
+      transition: opacity 1s ease, box-shadow 0.3s;
+      white-space: nowrap;
+    }
+
+    .start-btn:hover {
+      box-shadow: 0 0 50px #ff1493;
+      color: #ff1493;
+      border-color: #ff1493;
+    }
+
+    .start-btn.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .music-control {
+      position: absolute;
+      bottom: 30px;
+      right: 30px;
+      z-index: 200;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(255, 105, 180, 0.2);
+      border: 2px solid #ff69b4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 20px #ff69b4;
+      transition: 0.3s;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .music-control.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .music-control:hover {
+      background: #ff69b4;
+      color: #0a0a0a;
+      box-shadow: 0 0 40px #ff1493;
+    }
+
+    .text-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+      z-index: 50;
+      padding: 20px;
+    }
+
+    .typing-text {
+      color: #ffffff;
+      font-family: 'Bad Script', cursive;
+      font-size: 2rem;
+      font-weight: 400;
+      font-style: normal;
+      text-align: center;
+      text-shadow: 0 0 30px #ff69b4, 0 0 60px #ff3366;
+      max-width: 1300px;
+      width: 100%;
+      line-height: 1.7;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      margin: 0 auto;
+      letter-spacing: normal;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      user-select: none;
+    }
+
+    .typing-text.clickable {
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 100px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: rgba(255, 105, 180, 0.7);
+      font-size: 1.2rem;
+      font-family: 'Bad Script', cursive;
+      text-shadow: 0 0 10px #ff69b4;
+      letter-spacing: 2px;
+      z-index: 60;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.8s;
+      white-space: nowrap;
+    }
+
+    .hint.visible {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .start-btn {
+        font-size: 2rem;
+        padding: 15px 30px;
+      }
+      .typing-text {
+        font-size: 1.5rem;
+      }
+      .music-control {
+        width: 55px;
+        height: 55px;
+        font-size: 1.8rem;
+        bottom: 20px;
+        right: 20px;
+      }
+      .hint {
+        font-size: 1rem;
+        bottom: 80px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .typing-text {
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+      .start-btn {
+        font-size: 1.6rem;
+        padding: 12px 24px;
+      }
+      .hint {
+        font-size: 0.9rem;
+        bottom: 70px;
+      }
+    }
+
+    .heart {
+      position: absolute;
+      bottom: -80px;
+      background-repeat: no-repeat;
+      background-size: contain;
+      animation: floatUp linear forwards;
+      opacity: 0.6;
+      filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8));
+      z-index: 1;
+    }
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.6;
+      }
+      100% {
+        transform: translateY(-120vh) scale(1.4);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="start-btn" id="startBtn">💖 Включить музыку 💖</button>
+  <div class="music-control" id="musicControl">🔊</div>
+  <div class="text-container" id="textContainer"></div>
+  <div class="hint" id="hint">👆 нажми на текст, чтобы продолжить</div>
+
+  <audio id="bgMusic" loop preload="auto">
+    <source src="Ренат_Гайсин_Сүйемін_OST_к_фильму_Брат_или_Брак_.m4a" type="audio/mpeg">
+  </audio>
+
+  <script>
+    (function() {
+      const phrases = [
+        "Знаешь, ты мне безумно нравишься. Кажется, я влюбился в тебя с первого взгляда — тогда я сразу почувствовал, что ты особенная. Я ловлю себя на том, что постоянно засматриваюсь на тебя и каждый раз думаю: как один человек может быть настолько прекрасным.",
+        "Когда я смотрю в твои глаза, будто тону в них — они завораживают так сильно, что отвести взгляд почти невозможно. И есть ещё тот самый аромат… тот, который я чувствую, когда ты рядом. Я помню его с того момента, как впервые обнял тебя, и это чувство я точно никогда не забуду.",
+        "Иногда мне бывает тяжело, я переживаю или просто теряюсь в мыслях. И в такие моменты первый человек, который искренне волнуется за меня — это ты. Твои слова поддержки, твои напоминания и забота всегда для меня очень ценны, и мне невероятно приятно это чувствовать.",
+        "Наверное, именно поэтому ты стала для меня таким важным человеком. Ты — тот, о ком я думаю, на кого хочу равняться и рядом с кем мне по-настоящему тепло и спокойно. И я просто очень тебя люблю.",
+        "Сүйемін сені, жаным менің."
+      ];
+
+      const startBtn = document.getElementById('startBtn');
+      const musicControl = document.getElementById('musicControl');
+      const audio = document.getElementById('bgMusic');
+      const textContainer = document.getElementById('textContainer');
+      const hint = document.getElementById('hint');
+
+      let isMusicPlaying = false;
+      let isActive = false;
+      let currentPhraseIndex = 0;
+      let typingTimer = null;
+      let charIndex = 0;
+      let currentText = '';
+      let waitingForClick = false;
+      let finished = false;
+
+      function clearTimers() {
+        if (typingTimer) clearTimeout(typingTimer);
+        typingTimer = null;
+      }
+
+      // Запуск печати для указанной фразы
+      function startTypingPhrase(index) {
+        clearTimers();
+        
+        if (index >= phrases.length) {
+          showFinalScreen();
+          return;
+        }
+
+        currentText = phrases[index];
+        charIndex = 0;
+        waitingForClick = false;
+        
+        // Создаём элемент для печати (изначально не кликабельный)
+        const textElement = document.createElement('div');
+        textElement.className = 'typing-text';
+        textContainer.innerHTML = '';
+        textContainer.appendChild(textElement);
+
+        function typeNextChar() {
+          if (!isActive) return;
+          
+          if (charIndex < currentText.length) {
+            textElement.textContent = currentText.substring(0, charIndex + 1);
+            charIndex++;
+            typingTimer = setTimeout(typeNextChar, 60);
+          } else {
+            // Печать завершена — делаем кликабельным и показываем подсказку
+            textElement.classList.add('clickable');
+            waitingForClick = true;
+            hint.classList.add('visible');
+            typingTimer = null;
+          }
+        }
+
+        typeNextChar();
+      }
+
+      // Финальный экран
+      function showFinalScreen() {
+        finished = true;
+        waitingForClick = true;
+        textContainer.innerHTML = `<div class="typing-text clickable">❤️ Спасибо, что ты есть ❤️</div>`;
+        hint.innerHTML = '👆 нажми, чтобы начать сначала (музыка продолжается)';
+        hint.classList.add('visible');
+      }
+
+      // Обработка клика для перехода к следующей фразе
+      function goToNext() {
+        if (!isActive || !waitingForClick) return;
+
+        if (finished) {
+          // РЕСТАРТ: начинаем с первой фразы
+          finished = false;
+          currentPhraseIndex = 0;
+          hint.classList.remove('visible');
+          startTypingPhrase(0);
+          return;
+        }
+
+        // Переход к следующей фразе (всегда с печатью)
+        currentPhraseIndex++;
+        
+        if (currentPhraseIndex < phrases.length) {
+          // Следующая фраза будет напечатана
+          hint.classList.remove('visible');
+          startTypingPhrase(currentPhraseIndex);
+        } else {
+          // Все фразы напечатаны, показываем финал
+          showFinalScreen();
+        }
+      }
+
+      // Обработчик кликов
+      textContainer.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('typing-text')) return;
+        if (!isActive) return;
+        if (!waitingForClick) return;
+        
+        goToNext();
+      });
+
+      // Старт после нажатия на кнопку
+      function startSequence() {
+        if (isActive) return;
+        isActive = true;
+        finished = false;
+        currentPhraseIndex = 0;
+        waitingForClick = false;
+        hint.classList.remove('visible');
+        startTypingPhrase(0);
+      }
+
+      startBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startBtn.classList.add('hidden');
+        musicControl.classList.add('visible');
+
+        audio.play()
+          .then(() => {
+            isMusicPlaying = true;
+            musicControl.innerHTML = '🔊';
+          })
+          .catch(() => {
+            musicControl.innerHTML = '🔇';
+          });
+
+        startSequence();
+      });
+
+      musicControl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isMusicPlaying) {
+          audio.pause();
+          musicControl.innerHTML = '🔇';
+        } else {
+          audio.play()
+            .then(() => {
+              musicControl.innerHTML = '🔊';
+            })
+            .catch(() => {});
+        }
+        isMusicPlaying = !isMusicPlaying;
+      });
+
+      // Фоновые сердечки
+      function createHeart() {
+        const heart = document.createElement("div");
+        heart.className = "heart";
+
+        let size = window.innerWidth <= 768 ? Math.random() * 40 + 60 : Math.random() * 30 + 50;
+        heart.style.width = size + "px";
+        heart.style.height = size + "px";
+        heart.style.left = Math.random() * window.innerWidth + "px";
+
+        const duration = Math.random() * 3 + 4;
+        heart.style.animationDuration = duration + "s";
+
+        const colors = ["#ff0000", "#ff2222", "#ff3333", "#ff4444", "#ff1111", "#ff5555"];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}"><path fill="${color}" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+        heart.style.backgroundImage = `url('data:image/svg+xml;utf8,${encodeURIComponent(svg)}')`;
+
+        heart.style.filter = `drop-shadow(0 0 ${window.innerWidth <= 768 ? '20px' : '15px'} ${color}) brightness(1.3)`;
+
+        document.body.appendChild(heart);
+
+        setTimeout(() => {
+          if (heart.parentNode) heart.remove();
+        }, duration * 1000);
+      }
+
+      let heartInterval = setInterval(createHeart, window.innerWidth <= 768 ? 150 : 200);
+
+      window.addEventListener('resize', () => {
+        clearInterval(heartInterval);
+        heartInterval = setInterval(createHeart, window.innerWidth <= 768 ? 150 : 200);
+      });
+
+      for (let i = 0; i < 8; i++) {
+        setTimeout(createHeart, i * 200);
+      }
+    })();
+  </script>
+</body>
+</html>
